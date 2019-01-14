@@ -3,10 +3,9 @@
 /* helper functions, given a file path returns the file name region */
 
 def sampleName(file) {
-
+	
 	def tokens  = file.tokenize("-")
 	String name = tokens[0]
-
 	return name
 }
 
