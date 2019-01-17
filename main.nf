@@ -25,6 +25,7 @@ def sampleName(file) {
 
 	def tokens  = file.tokenize("-")
 	String name = tokens[0]
+
 	return name
 }
 
@@ -35,6 +36,7 @@ def sampleType(file) {
 	String type = tokens[1]
 
 	switch(type) {
+
 		case "T":
 			return "tumor"
 			break;
@@ -45,9 +47,8 @@ def sampleType(file) {
 }
 
 
-Channel.fromFilePairs("s3://noelnamai/data/reads/*-WXS.read_{1,2}.fastq.gz")
+raw_reads_ch = Channel.fromFilePairs("s3://noelnamai/data/reads/*-WXS.read_{1,2}.fastq.gz")
 	.map{file -> tuple(sampleName(file[0]), sampleType(file[0]), file[1])}
-	.set{raw_reads_ch}
 
 
 /* 
