@@ -1,5 +1,24 @@
 #!/usr/bin/env nextflow
 
+
+/* 
+ * parse the input parameters.
+ */
+
+genome_fasta           = file(params.genome_fasta) 
+genome_fasta_sa        = file(params.genome_fasta + ".sa")
+genome_fasta_fai       = file(params.genome_fasta + ".fai")
+genome_fasta_bwt       = file(params.genome_fasta + ".bwt")
+genome_fasta_ann       = file(params.genome_fasta + ".ann")
+genome_fasta_amb       = file(params.genome_fasta + ".amb")
+genome_fasta_pac       = file(params.genome_fasta + ".pac")
+genome_fasta_dict      = file("${genome_fasta.parent}/ucsc.hg19.dict")
+cosmic_file            = file(params.cosmic_file)
+mills_indel_file       = file(params.mills_indel_file)
+known_indel_file       = file(params.known_indel_file)
+known_dbsnps_file      = file(params.known_dbsnps_file)
+known_dbsnps_1000_file = file(params.known_dbsnps_1000_file)
+
 /* helper functions, given a file path returns the file name region */
 
 def sampleName(file) {
