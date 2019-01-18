@@ -63,8 +63,11 @@ def sampleType(file) {
 }
 
 
-raw_reads_ch = Channel.fromFilePairs("s3://noelnamai/data/reads/*-WXS.read_{1,2}.fastq.gz")
-	.map{file -> tuple(sampleName(file[0]), sampleType(file[0]), file[1])}
+// raw_reads_ch = Channel.fromFilePairs("s3://noelnamai/data/reads/*-WXS.read_{1,2}.fastq.gz")
+// 	.map{file -> tuple(sampleName(file[0]), sampleType(file[0]), file[1])}
+
+
+raw_reads_ch = Channel.from( 1, 2, 3, 4, 5, 6, 7 )
 
 
 /* 
@@ -73,28 +76,28 @@ raw_reads_ch = Channel.fromFilePairs("s3://noelnamai/data/reads/*-WXS.read_{1,2}
 
 process bwa_mem { 
 	
-	tag "$sampleName $sampleType"
+	tag "$number"
 
 	container "biocontainers/bwa:0.7.15"
 
 	publishDir "${params.results}/$sampleName", mode: "move", overwrite: true
 
 	input:
-	file genome_fasta     
-	file genome_fasta_sa  
-	file genome_fasta_fai 
-	file genome_fasta_bwt 
-	file genome_fasta_ann 
-	file genome_fasta_amb 
+	file genome_fasta
+	file genome_fasta_sa
+	file genome_fasta_fai
+	file genome_fasta_bwt
+	file genome_fasta_ann
+	file genome_fasta_amb
 	file genome_fasta_pac
 	
-	set sampleName, sampleType, file(reads) from raw_reads_ch
+	value number from raw_reads_ch
 
 	output: 
-	set sampleName, sampleType, file("${sampleName}.${sampleType}.sam") into bwa_aligned_sam_wxs_ch
+	file("${sampleName}.${sampleType}.sam") into bwa_aligned_sam_wxs_ch
 
 	script:
 	"""
-	echo "done" > "${sampleName}.${sampleType}.sam"
+	echo "$number" > "${sampleName}.${sampleType}.sam"
 	"""
 }
