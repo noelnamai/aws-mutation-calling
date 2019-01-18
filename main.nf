@@ -1,5 +1,21 @@
 #!/usr/bin/env nextflow
 
+params.help = null
+
+println """\
+S O M A T I C  S H O R T  V A R I A N T  D I S C O V E R Y  (S N V s  +  I N D E L S) 
+=====================================================================================
+Start      : $workflow.start
+
+BWA        : BWA-0.7.15
+Samtools   : Samtools-1.3.1
+Picard     : Picard-2.3.0
+GATK       : GenomeAnalysisTK-3.8-0
+Strelka    : Strelka-2.9.7
+Varscan    : VarScan-v2.4.2
+"""
+.stripIndent()
+
 
 /* 
  * parse the input parameters.
@@ -19,6 +35,7 @@ known_indel_file       = file(params.known_indel_file)
 known_dbsnps_file      = file(params.known_dbsnps_file)
 known_dbsnps_1000_file = file(params.known_dbsnps_1000_file)
 
+
 /* helper functions, given a file path returns the file name region */
 
 def sampleName(file) {
@@ -28,7 +45,6 @@ def sampleName(file) {
 
 	return name
 }
-
 
 def sampleType(file) {
 
@@ -57,7 +73,7 @@ raw_reads_ch = Channel.fromFilePairs("s3://noelnamai/data/reads/*-WXS.read_{1,2}
 
 process bwa_mem { 
 	
-	tag "$sampleName"
+	tag "$sampleName $sampleType"
 
 	container "biocontainers/bwa:0.7.15"
 
