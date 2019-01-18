@@ -94,10 +94,10 @@ process bwa_mem {
 	val number from raw_reads_ch
 
 	output: 
-	file("${sampleName}.${sampleType}.sam") into bwa_aligned_sam_wxs_ch
+	file("${number}.txt") into bwa_aligned_sam_wxs_ch
 
 	script:
 	"""
-	echo "$number" > "${sampleName}.${sampleType}.sam"
+	echo "$number" > "${number}.txt"
 	"""
 }
