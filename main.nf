@@ -67,7 +67,7 @@ def sampleType(file) {
 // 	.map{file -> tuple(sampleName(file[0]), sampleType(file[0]), file[1])}
 
 
-raw_reads_ch = Channel.from( 1, 2, 3, 4, 5, 6, 7 )
+raw_reads_ch = Channel.from( 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 
 /* 
