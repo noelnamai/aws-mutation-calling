@@ -91,7 +91,7 @@ process bwa_mem {
 	file genome_fasta_amb
 	file genome_fasta_pac
 	
-	value number from raw_reads_ch
+	val number from raw_reads_ch
 
 	output: 
 	file("${sampleName}.${sampleType}.sam") into bwa_aligned_sam_wxs_ch
