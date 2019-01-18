@@ -80,7 +80,7 @@ process bwa_mem {
 
 	container "biocontainers/bwa:0.7.15"
 
-	publishDir "${params.results}/$sampleName", mode: "move", overwrite: true
+	publishDir "${params.results}", mode: "move", overwrite: true
 
 	input:
 	file genome_fasta
