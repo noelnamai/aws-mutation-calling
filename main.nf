@@ -77,6 +77,8 @@ process bwa_mem {
 
 	container "biocontainers/bwa:0.7.15"
 
+	publishDir "${params.results}/$sampleName", mode: "move", overwrite: true
+
 	input:
 	file genome_fasta     
 	file genome_fasta_sa  
@@ -93,6 +95,6 @@ process bwa_mem {
 
 	script:
 	"""
-	bwa mem -t ${params.threads.mapping} -M ${genome_fasta} ${reads[0]} ${reads[1]} > "${sampleName}.${sampleType}.sam"
+	echo "done" > "${sampleName}.${sampleType}.sam"
 	"""
 }
