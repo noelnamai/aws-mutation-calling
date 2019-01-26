@@ -10,12 +10,12 @@ println """\
 G E R M L I N E  V A R I A N T  D I S C O V E R Y  (S N V s  +  I N D E L S) 
 ============================================================================
 
-Picard     : 2.3.0
-Strelka    : 2.9.7
-Varscan    : 2.4.2
-Samtools   : 1.3.1
-GATK       : 3.8.0
-BWA        : 0.7.15
+1. Picard     : 2.3.0
+2. Strelka    : 2.9.7
+3. Varscan    : 2.4.2
+4. Samtools   : 1.3.1
+5. GATK       : 3.8.0
+6. BWA        : 0.7.15
 
 Start Time : $workflow.start
 """
@@ -113,7 +113,7 @@ process fastqc {
 
 	cat "${forward.baseName}" "${reverse.baseName}" > ${sample}.merged.fastq
 
-	fastqc ${sample}.merged.fastq \
+	/opt/fastqc ${sample}.merged.fastq \
 		--noextract \
 		--threads ${task.cpus}
 	"""
