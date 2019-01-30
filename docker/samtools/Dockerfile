@@ -2,7 +2,7 @@
 FROM ubuntu:16.04
 
 #name and email of the person who maintains the file
-MAINTAINER Noel Namai namai@bcm.edu
+MAINTAINER Noel Namai noelnamai@yahoo.com
 
 # Updating ubuntu and installing other necessary software
 RUN apt-get clean all \
@@ -46,16 +46,6 @@ RUN wget https://github.com/samtools/samtools/archive/1.9.tar.gz \
 	&& cd samtools-1.9 \
 	&& autoheader \
 	&& autoconf -Wno-syntax \
-	&& ./configure --prefix=/usr/local/ \
-	&& make \
-	&& make install \
-	&& cd ..
-
-#install VCFtools
-RUN wget https://github.com/vcftools/vcftools/releases/download/v0.1.16/vcftools-0.1.16.tar.gz \
-	&& tar -xvzf vcftools-0.1.16.tar.gz \
-	&& rm vcftools-0.1.16.tar.gz \
-	&& cd vcftools-0.1.16 \
 	&& ./configure --prefix=/usr/local/ \
 	&& make \
 	&& make install \

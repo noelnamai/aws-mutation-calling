@@ -1,5 +1,5 @@
 #specifying the base image
-FROM ubuntu:16.04
+FROM java:8
 
 #name and email of the person who maintains the file
 MAINTAINER Noel Namai noelnamai@yahoo.com
@@ -16,11 +16,9 @@ RUN apt-get clean all \
 		libncurses5-dev \
 	&& apt-get clean
 
-#install ANNOVAR
-COPY annovar.tar.gz .
-RUN tar -xzf annovar.tar.gz \
-	&& rm annovar.tar.gz \
-	&& mv annovar /opt/
+#install picard
+RUN wget https://github.com/broadinstitute/picard/releases/download/2.18.25/picard.jar \
+	&& mv picard.jar /opt/
 
 #chmod of /opt/
 RUN chmod -R 777 /opt/

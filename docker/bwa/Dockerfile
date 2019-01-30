@@ -2,7 +2,7 @@
 FROM ubuntu:16.04
 
 #name and email of the person who maintains the file
-MAINTAINER Noel Namai namai@bcm.edu
+MAINTAINER Noel Namai noelnamai@yahoo.com
 
 # Updating ubuntu and installing other necessary software
 RUN apt-get clean all \
