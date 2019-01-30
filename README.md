@@ -1,4 +1,4 @@
-# A Large Scale, Cloud Based, Low Cost and Reproducible Mutation Calling Pipeline Using Docker Containers.
+## A Large Scale, Cloud Based, Low Cost and Reproducible Mutation Calling Pipeline Using Docker Containers.
 
 ## Abstract.
 
