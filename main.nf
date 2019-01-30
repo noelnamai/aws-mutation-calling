@@ -58,7 +58,7 @@ process trimmomatic {
 	memory = "8 GB"
 
 	when:
-	sample == "ERR034518" || sample == "ERR034519"
+	sample == "ERR034518"
 
 	input:
 	set sample, file(reads) from raw_reads_ch
@@ -128,7 +128,7 @@ process bwa_mem {
 
 	tag "$sample"
 
-	container "biocontainers/bwa:0.7.15"
+	container "noelnamai/bwa:0.7.12"
 
 	cpus   = 4
 
@@ -569,7 +569,7 @@ process annovar {
 
 	tag "$sample"
 
-	container "zhanglab18/annovar:latest"
+	container "noelnamai/annovar:4.18"
 
 	cpus   = 4
 
