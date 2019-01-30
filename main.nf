@@ -11,10 +11,11 @@ G E R M L I N E  V A R I A N T  D I S C O V E R Y  (S N V s  +  I N D E L S)
 Start    : $workflow.start
 
 BWA      : BWA-0.7.15
-Picard   : Picard-2.3.0
+Annovar  : Annovar-4.18
+Samtools : Samtools-1.9
 Strelka  : Strelka-2.9.7
 Varscan  : Varscan-2.4.2
-Samtools : Samtools-1.3.1
+Picard   : Picard-2.18.15
 GATK     : GenomeAnalysisTK-3.8-0
 
 Results  : ${params.results}
@@ -163,7 +164,7 @@ process samtools_view {
 
 	tag "$sample"
 
-	container "biocontainers/samtools:1.3.1"
+	container "noelnamai/samtools:1.9"
 
 	cpus   = 2
 
@@ -190,7 +191,7 @@ process picard_add_or_replace_read_groups {
 	
 	tag "$sample"
 
-	container "biocontainers/picard:2.3.0"
+	container "noelnamai/picard:2.18.25"
 
 	cpus   = 2
 
@@ -205,7 +206,7 @@ process picard_add_or_replace_read_groups {
 	
 	script:
 	"""
-	picard AddOrReplaceReadGroups \
+	java -Xmx6g -jar /opt/picard.jar AddOrReplaceReadGroups \
 		I=${bam_file} \
 		O="${bam_file.baseName}.grouped.sorted.bam" \
 		SO=coordinate \
@@ -225,7 +226,7 @@ process samtools_flagstat {
 	
 	tag "$sample"
 
-	container "biocontainers/samtools:1.3.1"
+	container "noelnamai/samtools:1.9"
 
 	cpus   = 2
 
@@ -254,7 +255,7 @@ process picard_mark_duplicates {
 	
 	tag "$sample"
 
-	container "biocontainers/picard:2.3.0"
+	container "noelnamai/picard:2.18.25"
 
 	cpus   = 2
 
@@ -269,7 +270,7 @@ process picard_mark_duplicates {
 	
 	script:
 	"""	
-	picard MarkDuplicates \
+	java -Xmx6g -jar /opt/picard.jar MarkDuplicates \
 		I=${bam_file_added_group} \
 		O="${bam_file_added_group.baseName}.deduplicated.bam" \
 		METRICS_FILE="${bam_file_added_group.baseName}.output.metrics" \
@@ -490,7 +491,7 @@ process picard_sort_vcf {
 
 	tag "$sample"
 
-	container "biocontainers/picard:2.3.0"
+	container "noelnamai/picard:2.18.25"
 
 	cpus   = 2
 
@@ -510,7 +511,7 @@ process picard_sort_vcf {
 
 	script:
 	"""
-	java -Xmx6g -jar /opt/conda/share/picard-2.3.0-0/picard.jar SortVcf \
+	java -Xmx6g -jar /opt/picard.jar SortVcf \
 		I=${original_vcf} \
 		O="${original_vcf.baseName}.sorted.vcf" \
 		SEQUENCE_DICTIONARY=${genome_fasta_dict}
