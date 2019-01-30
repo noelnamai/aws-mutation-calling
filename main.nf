@@ -6,18 +6,18 @@ params.help = null
 
 println """\
 
-
 G E R M L I N E  V A R I A N T  D I S C O V E R Y  (S N V s  +  I N D E L S) 
 ============================================================================
+Start    : $workflow.start
 
-1. Picard     : 2.3.0
-2. Strelka    : 2.9.7
-3. Varscan    : 2.4.2
-4. Samtools   : 1.3.1
-5. GATK       : 3.8.0
-6. BWA        : 0.7.15
+BWA      : BWA-0.7.15
+Picard   : Picard-2.3.0
+Strelka  : Strelka-2.9.7
+Varscan  : Varscan-2.4.2
+Samtools : Samtools-1.3.1
+GATK     : GenomeAnalysisTK-3.8-0
 
-Start Time : $workflow.start
+Results  : ${params.results}
 """
 .stripIndent()
 
@@ -34,7 +34,6 @@ genome_fasta_ann       = file(params.genome_fasta_ann)
 genome_fasta_amb       = file(params.genome_fasta_amb)
 genome_fasta_pac       = file(params.genome_fasta_pac)
 genome_fasta_dict      = file(params.genome_fasta_dict)
-cosmic_file            = file(params.cosmic_file)
 mills_indel_file       = file(params.mills_indel_file)
 known_indel_file       = file(params.known_indel_file)
 known_dbsnps_file      = file(params.known_dbsnps_file)
@@ -56,25 +55,25 @@ process trimmomatic {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "8 GB"
 
 	when:
-	sample == "ERR034518"
+	sample == "ERR034518" || sample == "ERR034519"
 
 	input:
 	set sample, file(reads) from raw_reads_ch
 
 	output:
-	set sample, file("${sample}.filtered.paired_1.fq.gz"), file("${sample}.filtered.paired_2.fq.gz") into trimmed_raw_reads_ch1
-	set sample, file("${sample}.filtered.paired_1.fq.gz"), file("${sample}.filtered.paired_2.fq.gz") into trimmed_raw_reads_ch2
+	set sample, file("${sample}.trimmed.paired_1.fq.gz"), file("${sample}.trimmed.paired_2.fq.gz") into trimmed_raw_reads_ch_1
+	set sample, file("${sample}.trimmed.paired_1.fq.gz"), file("${sample}.trimmed.paired_2.fq.gz") into trimmed_raw_reads_ch_2
 
 	script:
 	"""
-	java -Xmx4g -jar /opt/Trimmomatic-0.38/trimmomatic-0.38.jar PE \
+	java -Xmx6g -jar /opt/trimmomatic-0.38.jar PE \
 		-phred33 \
 		${reads[0]} ${reads[1]} \
-		${sample}.filtered.paired_1.fq.gz ${sample}.filtered.unpaired_1.fq.gz \
-		${sample}.filtered.paired_2.fq.gz ${sample}.filtered.unpaired_2.fq.gz \
+		${sample}.trimmed.paired_1.fq.gz ${sample}.trimmed.unpaired_1.fq.gz \
+		${sample}.trimmed.paired_2.fq.gz ${sample}.trimmed.unpaired_2.fq.gz \
 		ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 \
 		LEADING:3 \
 		TRAILING:3 \
@@ -94,28 +93,29 @@ process fastqc {
 
 	container "noelnamai/fastqc:0.11.3"
 
-	cpus   = 4
+	cpus   = 2
 
-	memory = "30 GB"
+	memory = "8 GB"
 
-	publishDir "${params.results}", mode: "copy", overwrite: true
+	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
 
 	input:
-	set sample, file(forward), file(reverse) from trimmed_raw_reads_ch1
+	set sample, file(forward), file(reverse) from trimmed_raw_reads_ch_1
 
 	output:
-	file("*") into fastqc_ch
+	file("*.html") into fastqc_ch
 
 	script:
 	"""
-	gunzip ${forward}
-	gunzip ${reverse}
+	gunzip ${forward} ${reverse}
 
-	cat "${forward.baseName}" "${reverse.baseName}" > ${sample}.merged.fastq
+	cat "${forward.baseName}" "${reverse.baseName}" > ${sample}.fastq
 
-	/opt/fastqc ${sample}.merged.fastq \
+	/usr/bin/fastqc ${sample}.fastq \
 		--noextract \
 		--threads ${task.cpus}
+
+	mv ${sample}_fastqc.html ${sample}.fastqc.html
 	"""
 } 
 
@@ -143,7 +143,7 @@ process bwa_mem {
 	file genome_fasta_amb 
 	file genome_fasta_pac
 	
-	set sample, file(forward), file(reverse) from trimmed_raw_reads_ch2
+	set sample, file(forward), file(reverse) from trimmed_raw_reads_ch_2
 
 	output: 
 	set sample, file("${sample}.sam") into bwa_aligned_sam_ch
@@ -167,7 +167,7 @@ process samtools_view {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "8 GB"
 
 	input:
 	set sample, file(sam_file) from bwa_aligned_sam_ch
@@ -194,7 +194,7 @@ process picard_add_or_replace_read_groups {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "8 GB"
 	
 	input:
 	set sample, file(bam_file) from bwa_aligned_bam_ch
@@ -229,19 +229,19 @@ process samtools_flagstat {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "8 GB"
 
-	publishDir "${params.results}", mode: "copy", overwrite: true
+	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
 	
 	input:
 	set sample, file(bam_file_added_group) from picard_added_group_bam_ch1
 	
 	output:
-	set sample, file("${bam_file_added_group.baseName}.mapping.statistic.txt") into samtools_flagstat_ch
+	set sample, file("${sample}.mapping.statistic.txt") into samtools_flagstat_ch
 	
 	script:
 	"""
-	samtools flagstat ${bam_file_added_group} > "${bam_file_added_group.baseName}.mapping.statistic.txt"
+	samtools flagstat ${bam_file_added_group} > "${sample}.mapping.statistic.txt"
 	"""
 }
 
@@ -258,7 +258,7 @@ process picard_mark_duplicates {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "8 GB"
 	
 	input:
 	set sample, file(bam_file_added_group) from picard_added_group_bam_ch2
@@ -308,7 +308,7 @@ process gatk_realigner_target_creator {
 	
 	script:
 	"""	
-	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
 		-T RealignerTargetCreator \
 		-nt ${task.cpus} \
 		-R ${genome_fasta} \
@@ -350,7 +350,7 @@ process gatk_indel_realignment {
 	
 	script:
 	"""	
-	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
 		-T IndelRealigner \
 		-R ${genome_fasta} \
 		-I ${bam_file_marked_duplicate} \
@@ -393,9 +393,9 @@ process gatk_base_recalibrator {
 	
 	script:
 	"""	
-	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
 		-T BaseRecalibrator \
-		-nct ${params.threads} \
+		-nct ${task.cpus} \
 		-R ${genome_fasta} \
 		-I ${indel_realigned_bam} \
 		--knownSites ${known_dbsnps_1000_file} \
@@ -420,8 +420,6 @@ process gatk_print_reads {
 	cpus   = 4
 
 	memory = "30 GB"
-
-	publishDir "${params.results}", mode: "copy", overwrite: true
 		
 	input:
 	file genome_fasta
@@ -431,17 +429,180 @@ process gatk_print_reads {
 	set sample, file(indel_realigned_bam), file(indel_realigned_bai), file(recalibration_table) from gatk_base_recalibrator_ch
 	
 	output:
-	file("${indel_realigned_bam.baseName}.processed.bam") into processed_bam_ch
-	file("${indel_realigned_bam.baseName}.processed.bai") into processed_bai_ch
+	set sample, file("*.processed.bam"), file("*.processed.bai") into processed_bam_ch_1
+	set sample, file("*.processed.bam"), file("*.processed.bai") into processed_bam_ch_2
 	
 	script:
 	"""
-	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
 		-T PrintReads \
-		-nct ${params.threads} \
+		-nct ${task.cpus} \
 		-R ${genome_fasta} \
 		-I ${indel_realigned_bam} \
 		-BQSR ${recalibration_table} \
 		-o "${indel_realigned_bam.baseName}.processed.bam"
+	"""
+}
+
+
+/* 
+ * call Germline SNPs and indels via local re-assembly of Haplotypes.
+ */
+
+process haplotype_caller {
+
+	tag "$sample"
+
+	container "broadinstitute/gatk3:3.8-0"
+
+	cpus   = 4
+
+	memory = "30 GB"
+
+	input:
+	file genome_fasta
+	file genome_fasta_fai
+	file genome_fasta_dict
+	file known_dbsnps_file
+
+	set sample, file(processed_bam), file(processed_bai) from processed_bam_ch_1
+
+	output:
+	set sample, file("${sample}.vcf") into haplotype_caller_ch
+
+	script:
+	"""
+	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+		-T HaplotypeCaller \
+		-R ${genome_fasta} \
+		-I ${processed_bam} \
+		--dbsnp ${known_dbsnps_file} \
+		--out "${sample}.vcf"
+	"""	
+}
+
+
+/* 
+ * sort VCF files according to the order of the contigs in the header/sequence dictionary and then by coordinate. 
+ */
+
+process picard_sort_vcf {
+
+	tag "$sample"
+
+	container "biocontainers/picard:2.3.0"
+
+	cpus   = 2
+
+	memory = "8 GB"
+
+	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+
+	input:
+	file genome_fasta
+	file genome_fasta_fai
+	file genome_fasta_dict
+	
+	set sample, file(original_vcf) from haplotype_caller_ch
+	
+	output:
+	set sample, file("${original_vcf.baseName}.sorted.vcf") into picard_sort_vcf_ch
+
+	script:
+	"""
+	java -Xmx6g -jar /opt/conda/share/picard-2.3.0-0/picard.jar SortVcf \
+		I=${original_vcf} \
+		O="${original_vcf.baseName}.sorted.vcf" \
+		SEQUENCE_DICTIONARY=${genome_fasta_dict}
+	"""
+}
+
+
+/* 
+ * filter variant calls based on INFO and FORMAT annotations. 
+ */
+
+process gatk_variant_filtration {
+
+	tag "$sample"
+
+	container "broadinstitute/gatk3:3.8-0"
+
+	cpus   = 2
+
+	memory = "8 GB"
+
+	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+
+	input:
+	file genome_fasta
+	file genome_fasta_fai
+	file genome_fasta_dict
+
+	set sample, file(sorted_vcf) from picard_sort_vcf_ch
+
+	output:
+	set sample, file("${sorted_vcf.baseName}.filtered.vcf") into gatk_variant_filtration_ch
+
+	script:
+	"""
+	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+		-T VariantFiltration \
+		-R ${genome_fasta} \
+		-V ${sorted_vcf} \
+		-window 35 \
+		-cluster 3 \
+		-filterName FS \
+		-filter "FS > 30.0" \
+		-filterName QD \
+		-filter "QD < 2.0" \
+		-o "${sorted_vcf.baseName}.filtered.vcf"
+	"""
+}
+
+
+/* 
+ * functionally annotate genetic variants detected from diverse genomes using ANNOVAR. 
+ */
+
+process annovar {
+
+	tag "$sample"
+
+	container "zhanglab18/annovar:latest"
+
+	cpus   = 4
+
+	memory = "15 GB"
+
+	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+
+	input:
+	set sample, file(haplotype_caller_vcf) from gatk_variant_filtration_ch
+
+	output:
+	set sample, file("${sample}.annovar.hg19.multianno.txt") into annovar_ch
+
+	script:
+	"""
+	perl /opt/annovar/annotate_variation.pl -buildver hg19 -downdb -webfrom annovar refGene /opt/annovar/humandb/
+	perl /opt/annovar/annotate_variation.pl -buildver hg19 -downdb cytoBand /opt/annovar/humandb/
+	perl /opt/annovar/annotate_variation.pl -buildver hg19 -downdb -webfrom annovar exac03 /opt/annovar/humandb/
+	perl /opt/annovar/annotate_variation.pl -buildver hg19 -downdb -webfrom annovar avsnp147 /opt/annovar/humandb/
+	perl /opt/annovar/annotate_variation.pl -buildver hg19 -downdb -webfrom annovar dbnsfp30a /opt/annovar/humandb/
+
+	perl /opt/annovar/table_annovar.pl ${haplotype_caller_vcf} /opt/annovar/humandb \
+		-buildver hg19 \
+		-out "${sample}.annovar" \
+		-protocol refGene \
+		-operation g \
+		-nastring . \
+		-vcfinput \
+		--thread ${task.cpus} \
+		--maxgenethread ${task.cpus} \
+		-polish \
+		-otherinfo
+
+	mv ${sample}.annovar.hg19_multianno.txt ${sample}.annovar.hg19.multianno.txt
 	"""
 }
