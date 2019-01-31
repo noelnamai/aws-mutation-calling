@@ -65,16 +65,16 @@ process trimmomatic {
 	set sample, file(reads) from raw_reads_ch
 
 	output:
-	set sample, file("${sample}.trimmed.paired_1.fq.gz"), file("${sample}.trimmed.paired_2.fq.gz") into trimmed_raw_reads_ch_1
-	set sample, file("${sample}.trimmed.paired_1.fq.gz"), file("${sample}.trimmed.paired_2.fq.gz") into trimmed_raw_reads_ch_2
+	set sample, file("${sample}.trimmed.paired.1.fq.gz"), file("${sample}.trimmed.paired.2.fq.gz") into trimmed_raw_reads_ch_1
+	set sample, file("${sample}.trimmed.paired.1.fq.gz"), file("${sample}.trimmed.paired.2.fq.gz") into trimmed_raw_reads_ch_2
 
 	script:
 	"""
 	java -Xmx6g -jar /opt/trimmomatic-0.38.jar PE \
 		-phred33 \
 		${reads[0]} ${reads[1]} \
-		${sample}.trimmed.paired_1.fq.gz ${sample}.trimmed.unpaired_1.fq.gz \
-		${sample}.trimmed.paired_2.fq.gz ${sample}.trimmed.unpaired_2.fq.gz \
+		${sample}.trimmed.paired.1.fq.gz ${sample}.trimmed.unpaired.1.fq.gz \
+		${sample}.trimmed.paired.2.fq.gz ${sample}.trimmed.unpaired.2.fq.gz \
 		ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 \
 		LEADING:3 \
 		TRAILING:3 \
@@ -206,7 +206,7 @@ process picard_add_or_replace_read_groups {
 	
 	script:
 	"""
-	java -Xmx6g -jar /opt/picard.jar AddOrReplaceReadGroups \
+	java -jar /opt/picard.jar AddOrReplaceReadGroups \
 		I=${bam_file} \
 		O="${bam_file.baseName}.grouped.sorted.bam" \
 		SO=coordinate \
@@ -270,7 +270,7 @@ process picard_mark_duplicates {
 	
 	script:
 	"""	
-	java -Xmx6g -jar /opt/picard.jar MarkDuplicates \
+	java -jar /opt/picard.jar MarkDuplicates \
 		I=${bam_file_added_group} \
 		O="${bam_file_added_group.baseName}.deduplicated.bam" \
 		METRICS_FILE="${bam_file_added_group.baseName}.output.metrics" \
@@ -456,9 +456,9 @@ process haplotype_caller {
 
 	container "broadinstitute/gatk3:3.8-0"
 
-	cpus   = 4
+	cpus   = 2
 
-	memory = "30 GB"
+	memory = "8 GB"
 
 	input:
 	file genome_fasta
@@ -511,7 +511,7 @@ process picard_sort_vcf {
 
 	script:
 	"""
-	java -Xmx6g -jar /opt/picard.jar SortVcf \
+	java -jar /opt/picard.jar SortVcf \
 		I=${original_vcf} \
 		O="${original_vcf.baseName}.sorted.vcf" \
 		SEQUENCE_DICTIONARY=${genome_fasta_dict}
@@ -547,7 +547,7 @@ process gatk_variant_filtration {
 
 	script:
 	"""
-	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+	java -jar /usr/GenomeAnalysisTK.jar \
 		-T VariantFiltration \
 		-R ${genome_fasta} \
 		-V ${sorted_vcf} \
