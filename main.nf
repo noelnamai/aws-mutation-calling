@@ -56,7 +56,7 @@ process trimmomatic {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 
 	when:
 	sample == "ERR034518"
@@ -65,8 +65,7 @@ process trimmomatic {
 	set sample, file(reads) from raw_reads_ch
 
 	output:
-	set sample, file("${sample}.trimmed.paired.1.fq.gz"), file("${sample}.trimmed.paired.2.fq.gz") into trimmed_raw_reads_ch_1
-	set sample, file("${sample}.trimmed.paired.1.fq.gz"), file("${sample}.trimmed.paired.2.fq.gz") into trimmed_raw_reads_ch_2
+	set sample, file("${sample}.trimmed.paired.1.fq.gz"), file("${sample}.trimmed.paired.2.fq.gz") into trimmed_raw_reads_ch_1, trimmed_raw_reads_ch_2
 
 	script:
 	"""
@@ -96,7 +95,7 @@ process fastqc {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 
 	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
 
@@ -168,7 +167,7 @@ process samtools_view {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 
 	input:
 	set sample, file(sam_file) from bwa_aligned_sam_ch
@@ -195,18 +194,17 @@ process picard_add_or_replace_read_groups {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 	
 	input:
 	set sample, file(bam_file) from bwa_aligned_bam_ch
 	
 	output:
-	set sample, file("${bam_file.baseName}.grouped.sorted.bam") into picard_added_group_bam_ch1
-	set sample, file("${bam_file.baseName}.grouped.sorted.bam") into picard_added_group_bam_ch2
+	set sample, file("${bam_file.baseName}.grouped.sorted.bam") into picard_added_group_bam_ch1, picard_added_group_bam_ch2
 	
 	script:
 	"""
-	java -jar /opt/picard.jar AddOrReplaceReadGroups \
+	java -Xmx6g -jar /opt/picard.jar AddOrReplaceReadGroups \
 		I=${bam_file} \
 		O="${bam_file.baseName}.grouped.sorted.bam" \
 		SO=coordinate \
@@ -230,7 +228,7 @@ process samtools_flagstat {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 
 	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
 	
@@ -259,18 +257,17 @@ process picard_mark_duplicates {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 	
 	input:
 	set sample, file(bam_file_added_group) from picard_added_group_bam_ch2
 	
 	output:
-	set sample, file("${bam_file_added_group.baseName}.deduplicated.bam"), file("${bam_file_added_group.baseName}.deduplicated.bai") into picard_mark_duplicates_ch1
-	set sample, file("${bam_file_added_group.baseName}.deduplicated.bam"), file("${bam_file_added_group.baseName}.deduplicated.bai") into picard_mark_duplicates_ch2
+	set sample, file("${bam_file_added_group.baseName}.deduplicated.bam"), file("${bam_file_added_group.baseName}.deduplicated.bai") into picard_mark_duplicates_ch1, picard_mark_duplicates_ch2
 	
 	script:
 	"""	
-	java -jar /opt/picard.jar MarkDuplicates \
+	java -Xmx6g -jar /opt/picard.jar MarkDuplicates \
 		I=${bam_file_added_group} \
 		O="${bam_file_added_group.baseName}.deduplicated.bam" \
 		METRICS_FILE="${bam_file_added_group.baseName}.output.metrics" \
@@ -430,8 +427,7 @@ process gatk_print_reads {
 	set sample, file(indel_realigned_bam), file(indel_realigned_bai), file(recalibration_table) from gatk_base_recalibrator_ch
 	
 	output:
-	set sample, file("*.processed.bam"), file("*.processed.bai") into processed_bam_ch_1
-	set sample, file("*.processed.bam"), file("*.processed.bai") into processed_bam_ch_2
+	set sample, file("*.processed.bam"), file("*.processed.bai") into processed_bam_ch_1, processed_bam_ch_2
 	
 	script:
 	"""
@@ -458,7 +454,7 @@ process haplotype_caller {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 
 	input:
 	file genome_fasta
@@ -478,7 +474,7 @@ process haplotype_caller {
 		-R ${genome_fasta} \
 		-I ${processed_bam} \
 		--dbsnp ${known_dbsnps_file} \
-		--out "${sample}.vcf"
+		--out "${sample}.snps.indels.g.vcf"
 	"""	
 }
 
@@ -495,7 +491,7 @@ process picard_sort_vcf {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 
 	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
 
@@ -511,7 +507,7 @@ process picard_sort_vcf {
 
 	script:
 	"""
-	java -jar /opt/picard.jar SortVcf \
+	java -Xmx6g -jar /opt/picard.jar SortVcf \
 		I=${original_vcf} \
 		O="${original_vcf.baseName}.sorted.vcf" \
 		SEQUENCE_DICTIONARY=${genome_fasta_dict}
@@ -531,7 +527,7 @@ process gatk_variant_filtration {
 
 	cpus   = 2
 
-	memory = "8 GB"
+	memory = "15 GB"
 
 	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
 
@@ -574,7 +570,7 @@ process annovar {
 
 	cpus   = 4
 
-	memory = "15 GB"
+	memory = "30 GB"
 
 	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
 
