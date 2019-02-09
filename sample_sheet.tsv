@@ -1,0 +1,3 @@
+fastq_ena_path	sample_id	run_id	center_name	population	study_name	analysis_group	library_layout	instrument_model	read_count	base_count
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR034/ERR034520/ERR034520_1.fastq.gz	SRS000051	ERR034520	BGI	CEU	1000 Genomes CEPH (Utah residents with ancestry from Northern and Western Europe) exome sequencing	exome	PAIRED	Illumina HiSeq 2000	61501216.0	11070218880.0
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR034/ERR034520/ERR034520_2.fastq.gz	SRS000051	ERR034520	BGI	CEU	1000 Genomes CEPH (Utah residents with ancestry from Northern and Western Europe) exome sequencing	exome	PAIRED	Illumina HiSeq 2000	61501216.0	11070218880.0

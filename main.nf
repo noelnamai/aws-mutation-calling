@@ -41,7 +41,11 @@ known_dbsnps_file      = file(params.known_dbsnps_file)
 known_dbsnps_1000_file = file(params.known_dbsnps_1000_file)
 
 
-raw_reads_ch = Channel.fromFilePairs("s3://noelnamai/data/reads/*_{1,2}.fastq.gz")
+/*
+ * read in the FASTQ files from s3 in pairs.
+ */
+
+raw_reads_ch = Channel.fromFilePairs("s3://noelnamai/data/${params.population}/*_{1,2}.fastq.gz")
 
 
 /*
@@ -59,7 +63,7 @@ process trimmomatic {
 	memory = "15 GB"
 
 	when:
-	sample == "ERR034518"
+	sample == "ERR034520"
 
 	input:
 	set sample, file(reads) from raw_reads_ch
@@ -97,7 +101,7 @@ process fastqc {
 
 	memory = "15 GB"
 
-	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
 	input:
 	set sample, file(forward), file(reverse) from trimmed_raw_reads_ch_1
@@ -230,7 +234,7 @@ process samtools_flagstat {
 
 	memory = "15 GB"
 
-	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 	
 	input:
 	set sample, file(bam_file_added_group) from picard_added_group_bam_ch1
@@ -493,7 +497,7 @@ process picard_sort_vcf {
 
 	memory = "15 GB"
 
-	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
 	input:
 	file genome_fasta
@@ -529,7 +533,7 @@ process gatk_variant_filtration {
 
 	memory = "15 GB"
 
-	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
 	input:
 	file genome_fasta
@@ -572,7 +576,7 @@ process annovar {
 
 	memory = "30 GB"
 
-	publishDir "${params.results}/$sample", mode: "copy", overwrite: true
+	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
 	input:
 	set sample, file(haplotype_caller_vcf) from gatk_variant_filtration_ch
