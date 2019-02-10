@@ -62,9 +62,6 @@ process trimmomatic {
 
 	memory = "15 GB"
 
-	when:
-	sample == "ERR034520"
-
 	input:
 	set sample, file(reads) from raw_reads_ch
 
@@ -478,7 +475,7 @@ process haplotype_caller {
 		-R ${genome_fasta} \
 		-I ${processed_bam} \
 		--dbsnp ${known_dbsnps_file} \
-		--out "${sample}.snps.indels.g.vcf"
+		--out "${sample}.vcf"
 	"""	
 }
 
