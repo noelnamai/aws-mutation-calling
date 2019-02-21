@@ -60,7 +60,10 @@ process trimmomatic {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
+
+	when:
+	sample == "ERR034520"
 
 	input:
 	set sample, file(reads) from raw_reads_ch
@@ -70,7 +73,7 @@ process trimmomatic {
 
 	script:
 	"""
-	java -Xmx6g -jar /opt/trimmomatic-0.38.jar PE \
+	java -Xmx4g -jar /opt/trimmomatic-0.38.jar PE \
 		-phred33 \
 		${reads[0]} ${reads[1]} \
 		${sample}.trimmed.paired.1.fq.gz ${sample}.trimmed.unpaired.1.fq.gz \
@@ -96,7 +99,7 @@ process fastqc {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 
 	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
@@ -131,7 +134,7 @@ process bwa_mem {
 
 	container "noelnamai/bwa:0.7.12"
 
-	cpus   = 4
+	cpus   = 8
 
 	memory = "30 GB"
 
@@ -168,7 +171,7 @@ process samtools_view {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 
 	input:
 	set sample, file(sam_file) from bwa_aligned_sam_ch
@@ -195,7 +198,7 @@ process picard_add_or_replace_read_groups {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 	
 	input:
 	set sample, file(bam_file) from bwa_aligned_bam_ch
@@ -205,7 +208,7 @@ process picard_add_or_replace_read_groups {
 	
 	script:
 	"""
-	java -Xmx6g -jar /opt/picard.jar AddOrReplaceReadGroups \
+	java -Xmx4g -jar /opt/picard.jar AddOrReplaceReadGroups \
 		I=${bam_file} \
 		O="${bam_file.baseName}.grouped.sorted.bam" \
 		SO=coordinate \
@@ -229,7 +232,7 @@ process samtools_flagstat {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 
 	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 	
@@ -258,7 +261,7 @@ process picard_mark_duplicates {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 	
 	input:
 	set sample, file(bam_file_added_group) from picard_added_group_bam_ch2
@@ -268,7 +271,7 @@ process picard_mark_duplicates {
 	
 	script:
 	"""	
-	java -Xmx6g -jar /opt/picard.jar MarkDuplicates \
+	java -Xmx4g -jar /opt/picard.jar MarkDuplicates \
 		I=${bam_file_added_group} \
 		O="${bam_file_added_group.baseName}.deduplicated.bam" \
 		METRICS_FILE="${bam_file_added_group.baseName}.output.metrics" \
@@ -288,7 +291,7 @@ process gatk_realigner_target_creator {
 
 	container "broadinstitute/gatk3:3.8-0"
 
-	cpus   = 4
+	cpus   = 8
 
 	memory = "30 GB"
 
@@ -307,7 +310,7 @@ process gatk_realigner_target_creator {
 	
 	script:
 	"""	
-	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
 		-T RealignerTargetCreator \
 		-nt ${task.cpus} \
 		-R ${genome_fasta} \
@@ -329,7 +332,7 @@ process gatk_indel_realignment {
 
 	container "broadinstitute/gatk3:3.8-0"
 
-	cpus   = 4
+	cpus   = 8
 
 	memory = "30 GB"
 	
@@ -349,7 +352,7 @@ process gatk_indel_realignment {
 	
 	script:
 	"""	
-	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
 		-T IndelRealigner \
 		-R ${genome_fasta} \
 		-I ${bam_file_marked_duplicate} \
@@ -371,7 +374,7 @@ process gatk_base_recalibrator {
 
 	container "broadinstitute/gatk3:3.8-0"
 
-	cpus   = 4
+	cpus   = 8
 
 	memory = "30 GB"
 	
@@ -392,7 +395,7 @@ process gatk_base_recalibrator {
 	
 	script:
 	"""	
-	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
 		-T BaseRecalibrator \
 		-nct ${task.cpus} \
 		-R ${genome_fasta} \
@@ -416,7 +419,7 @@ process gatk_print_reads {
 
 	container "broadinstitute/gatk3:3.8-0"
 
-	cpus   = 4
+	cpus   = 8
 
 	memory = "30 GB"
 		
@@ -432,7 +435,7 @@ process gatk_print_reads {
 	
 	script:
 	"""
-	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
 		-T PrintReads \
 		-nct ${task.cpus} \
 		-R ${genome_fasta} \
@@ -455,7 +458,7 @@ process haplotype_caller {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 
 	input:
 	file genome_fasta
@@ -470,7 +473,7 @@ process haplotype_caller {
 
 	script:
 	"""
-	java -Xmx6g -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
 		-T HaplotypeCaller \
 		-R ${genome_fasta} \
 		-I ${processed_bam} \
@@ -492,7 +495,7 @@ process picard_sort_vcf {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 
 	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
@@ -508,7 +511,7 @@ process picard_sort_vcf {
 
 	script:
 	"""
-	java -Xmx6g -jar /opt/picard.jar SortVcf \
+	java -Xmx4g -jar /opt/picard.jar SortVcf \
 		I=${original_vcf} \
 		O="${original_vcf.baseName}.sorted.vcf" \
 		SEQUENCE_DICTIONARY=${genome_fasta_dict}
@@ -528,7 +531,7 @@ process gatk_variant_filtration {
 
 	cpus   = 2
 
-	memory = "15 GB"
+	memory = "7.5 GB"
 
 	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
@@ -544,7 +547,7 @@ process gatk_variant_filtration {
 
 	script:
 	"""
-	java -jar /usr/GenomeAnalysisTK.jar \
+	java -Xmx4g -jar /usr/GenomeAnalysisTK.jar \
 		-T VariantFiltration \
 		-R ${genome_fasta} \
 		-V ${sorted_vcf} \
@@ -571,7 +574,7 @@ process annovar {
 
 	cpus   = 4
 
-	memory = "30 GB"
+	memory = "15 GB"
 
 	publishDir "${params.results}/${params.population}/$sample", mode: "copy", overwrite: true
 
